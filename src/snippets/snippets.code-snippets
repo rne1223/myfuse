@@ -1,0 +1,9 @@
+{
+    "HelloWorld":{
+        "prefix": "!fu",
+        "body": [
+            "this is a test"
+        ],
+        "description": "This is just an initial snippet to test things...description"
+    }
+}
