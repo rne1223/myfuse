@@ -30,7 +30,7 @@
       {
         "command": "myfuse.createSimpleFuse",
         "category": "MyFuse",
-        "title": "Create Simple Fuse"
+        "title": "Create Fuse"
       }
     ],
     "snippets": [

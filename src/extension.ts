@@ -17,14 +17,16 @@ export function deactivate() {}
 
 const createSimpleProject = async () => {
 	
-      // The code you place here will be executed every time your command is executed
-	// console.log("Creating a new simple fuse");
-
+	if (!vscode.workspace.workspaceFolders) {
+        vscode.window.showErrorMessage("Open a folder or workspace before creating a project!");
+        return;
+    }
     //   // Display a message box to the user
 	vscode.window.showInformationMessage("Creating a new simple Fuse");
 
     //   /**
     //    * Todo:
+	//    * Look for json file
     //    * Select simple or CDTL Fuse
     //    * Look into the templates folder
     //    * Create the file fuse
@@ -47,10 +49,18 @@ const createSimpleProject = async () => {
 			templates.push(template);
 		}
 
+		// Select a template
 		const selected = await vscode.window.showQuickPick(templates);
-		console.log("User selected " + selected);
+
+		if(selected !== undefined){
+			console.log("You selected: " + selected + " start creating the file reate the file");
+			writeFileSync
+		}else{
+			console.log("You selected nothing");
+		}
+
 	} catch (error) {
-        vscode.window.showErrorMessage( "MyFuse error: Sorry couldn't create Fuse because couldn't 'file.json' in  templates folder");
+        vscode.window.showErrorMessage(`MyFuse error: ${error}`);
 	}
 
     // //   try {
