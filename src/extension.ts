@@ -1,9 +1,25 @@
+/**
+ * Code modified from Easy C++ projects 'https://raw.githubusercontent.com/acharluk/easy-cpp-projects/master';
+ */
+
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'fs';
 import * as os from 'os';
 
+interface fuseTemplateJSON{
+    version: string;
+    directories?: string[];
+    templates: {
+        [templateName: string]: {
+            directories?: [string];
+            blankFiles?: [string];
+            files?: { [from: string]: string };
+            openFiles?: [string];
+        };
+    };
+}
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -16,24 +32,22 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 const createSimpleProject = async () => {
-	
-	if (!vscode.workspace.workspaceFolders) {
-        vscode.window.showErrorMessage("Open a folder or workspace before creating a project!");
-        return;
-    }
-    //   // Display a message box to the user
-	vscode.window.showInformationMessage("Creating a new simple Fuse");
 
-    //   /**
-    //    * Todo:
-	//    * Look for json file
-    //    * Select simple or CDTL Fuse
-    //    * Look into the templates folder
-    //    * Create the file fuse
-    //    */
-	//   let templates = [];
+	// Select the folder to create Fuse
+	let folder;
+	if (!vscode.workspace.workspaceFolders) {
+        vscode.window.showErrorMessage("Open a folder or workspace before creating a Fuse!");
+        return;
+    } else {
+        try {
+			folder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		}catch(error){
+			vscode.window.showErrorMessage(`${error}`);
+		}
+	}
+
+	// Read in file.json
 	let json_file = '';
-	// Get json file
 	if (os.type() === "Windows_NT") {
 		json_file = `${__dirname}\\templates\\files.json`;
     } else {
@@ -44,36 +58,46 @@ const createSimpleProject = async () => {
 		const content = readFileSync(json_file);
 		const data = JSON.parse(content.toString());
 
-		let templates = [];
-		for(let template in data.templates){
-			templates.push(template);
+		let templateNames = [];
+		for(let template in data.templates){ 
+			templateNames.push(template); 
 		}
 
-		// Select a template
-		const selected = await vscode.window.showQuickPick(templates);
+		// Select a Fuse template
+		const fuseType = await vscode.window.showQuickPick(templateNames);
 
-		if(selected !== undefined){
-			console.log("You selected: " + selected + " start creating the file reate the file");
-			writeFileSync
-		}else{
-			console.log("You selected nothing");
+		if(fuseType !== undefined){
+			createFuse(data, fuseType, folder);
+			vscode.workspace.getConfiguration('files').update('associations', { "*.fuse": "lua" }, vscode.ConfigurationTarget.Workspace);
 		}
 
 	} catch (error) {
         vscode.window.showErrorMessage(`MyFuse error: ${error}`);
 	}
-
-    // //   try {
-    // //     // Read in files.json to see what templates are available
-    // //     const json_file = readFileSync(`${__dirname}/templates/files.json`);
-    // //     for (let template in json_file) {
-	// // 		templates.push(template);
-    // //     }
-
-	// // 	console.log(templates);
-    // //   } catch (error) {
-    // //     vscode.window.showErrorMessage(
-    // //       "MyFuse error: Sorry couldn't create Fuse because couldn't 'file.json' in  templates folder"
-    // //     );
-    // //   }
 } 
+
+const createFuse =  async (files: fuseTemplateJSON, fuseType :string, folder:any) => {
+
+	// Read and copy the file from
+	let f = files.templates[fuseType].files;
+    if (f) {
+        for (let file in f) {
+            try {
+                const data = readFileSync( `${__dirname}/templates/${file}`).toString();
+                writeFileSync(`${folder}/${f[file]}`, data);
+            } catch (error) {
+				vscode.window.showErrorMessage( `Easy C++ Projects error: Could not load '${file}' locally.\nError: ${error}`);
+            }
+        }
+    }
+	// Open the file
+	let openFiles = files.templates[fuseType].openFiles;
+    if (openFiles) {
+        for (let file of openFiles) {
+            if (existsSync(`${folder}/${file}`)) {
+                vscode.workspace.openTextDocument(`${folder}/${file}`)
+                    .then(doc => vscode.window.showTextDocument(doc, { preview: false }));
+            }
+        }
+    }
+}
